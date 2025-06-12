@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-T">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Személyre Szabott Snake Játék</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="character-selection">
+        <h1>Válassz egy Játékost!</h1>
+        <div class="character-container">
+            <div class="character-card" data-character="gellert">
+                <img src="gellert.png" alt="Gellért">
+                <span>Gellért</span>
+            </div>
+            <div class="character-card" data-character="milan">
+                <img src="milan.png" alt="Milán">
+                <span>Milán</span>
+            </div>
+            <div class="character-card" data-character="apa">
+                <img src="apa.png" alt="Apa">
+                <span>Apa</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container" class="hidden">
+        <div class="game-header">
+            <div id="player-info">
+                Játékos: <span id="current-player-name"></span>
+                <img id="current-player-image" src="" alt="Játékos feje">
+            </div>
+            <div id="score-board">Pontszám: <span id="score">0</span></div>
+            <button id="reset-button">Új Játék</button>
+        </div>
+        <canvas id="gameCanvas" width="500" height="500"></canvas>
+        <div id="game-over-message" class="hidden">
+            <h2>Vége a játéknak!</h2>
+            <p>A pontszámod: <span id="final-score">0</span></p>
+            <button id="play-again-button">Újra?</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
