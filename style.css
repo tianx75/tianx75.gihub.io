@@ -13,7 +13,6 @@ body {
     display: none !important;
 }
 
-/* Karakterválasztó képernyő */
 #character-selection {
     text-align: center;
     background-color: white;
@@ -63,7 +62,6 @@ body {
     font-size: 1.2em;
 }
 
-/* Játék képernyő */
 #game-container {
     text-align: center;
 }
@@ -72,7 +70,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 500px;
+    width: 800px; /* VÁLTOZÁS: Nagyobb szélesség */
     margin-bottom: 15px;
     background-color: #fff;
     padding: 10px 20px;
@@ -113,11 +111,20 @@ body {
     background-color: #0056b3;
 }
 
-
 #gameCanvas {
     background-color: #333;
     border: 5px solid #222;
     border-radius: 10px;
+}
+/* ÚJ: Fókusz jelzése az irányításhoz */
+#gameCanvas:focus {
+    outline: 3px solid #007bff;
+}
+
+.instructions {
+    color: #666;
+    font-style: italic;
+    margin-top: 10px;
 }
 
 #game-over-message {
