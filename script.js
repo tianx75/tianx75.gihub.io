@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // HTML elemek kiválasztása
+    // HTML elemek
     const characterSelectionScreen = document.getElementById('character-selection');
     const gameContainer = document.getElementById('game-container');
     const characterCards = document.querySelectorAll('.character-card');
@@ -17,8 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Játék beállítások
     const gridSize = 20;
+    const obstacleCount = 15; // ÚJ: Akadályok száma
     let snake = [];
     let food = {};
+    let obstacles = []; // ÚJ: Akadályok tömbje
     let dx = gridSize;
     let dy = 0;
     let score = 0;
@@ -26,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let changingDirection = false;
     let gameLoop;
     
-    // Karakter adatok
+    // Karakter és új képek betöltése
     const characters = {
         gellert: { name: 'Gellért', img: new Image() },
         milan: { name: 'Milán', img: new Image() },
@@ -35,6 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
     characters.gellert.img.src = 'gellert.png';
     characters.milan.img.src = 'milan.png';
     characters.apa.img.src = 'apa.png';
+
+    // ÚJ: Ajándék és akadály képek
+    const giftImage = new Image();
+    giftImage.src = 'ajandek.png';
+    const obstacleImage = new Image();
+    obstacleImage.src = 'akadal.png';
     
     let selectedCharacter;
 
@@ -45,22 +53,21 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedCharacter = characters[characterId];
             characterSelectionScreen.classList.add('hidden');
             gameContainer.classList.remove('hidden');
+            canvas.focus(); // Fókusz a pályára az irányításhoz
             startGame();
         });
     });
     
-    resetButton.addEventListener('click', () => {
-        location.reload(); // Oldal újratöltése a karakterválasztáshoz
-    });
-
+    resetButton.addEventListener('click', () => { location.reload(); });
     playAgainButton.addEventListener('click', () => {
         gameOverMessage.classList.add('hidden');
+        canvas.focus();
         startGame();
     });
     
-    document.addEventListener('keydown', changeDirection);
+    // Az irányítás most a canvas-ra figyel, ha fókuszban van
+    canvas.addEventListener('keydown', changeDirection);
 
-    // Fő játékfüggvények
     function startGame() {
         isGameOver = false;
         score = 0;
@@ -68,16 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPlayerName.textContent = selectedCharacter.name;
         currentPlayerImage.src = selectedCharacter.img.src;
         
-        // Kígyó kezdőpozíciója a vászon közepén
         snake = [
-            {x: Math.floor(canvas.width / 2 / gridSize) * gridSize, y: Math.floor(canvas.height / 2 / gridSize) * gridSize},
-            {x: Math.floor(canvas.width / 2 / gridSize) * gridSize - gridSize, y: Math.floor(canvas.height / 2 / gridSize) * gridSize},
-            {x: Math.floor(canvas.width / 2 / gridSize) * gridSize - (gridSize*2), y: Math.floor(canvas.height / 2 / gridSize) * gridSize}
+            {x: Math.floor(canvas.width / 2 / gridSize) * gridSize, y: Math.floor(canvas.height / 2 / gridSize) * gridSize}
         ];
         
         dx = gridSize;
         dy = 0;
         
+        generateObstacles(); // ÚJ: Akadályok generálása
         generateFood();
         main();
     }
@@ -93,23 +98,48 @@ document.addEventListener('DOMContentLoaded', () => {
         changingDirection = false;
         gameLoop = setTimeout(() => {
             clearCanvas();
+            drawObstacles(); // ÚJ
             drawFood();
             moveSnake();
             drawSnake();
             main();
-        }, 120); // Ez a szám a kígyó sebessége. Kisebb szám = gyorsabb kígyó.
+        }, 120);
     }
 
     function clearCanvas() {
         ctx.fillStyle = '#333';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+    
+    // ÚJ: Akadályok generálása
+    function generateObstacles() {
+        obstacles = [];
+        for (let i = 0; i < obstacleCount; i++) {
+            let obstacle = {
+                x: Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize,
+                y: Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize
+            };
+            // Ellenőrizzük, ne legyen túl közel a kezdő kígyóhoz
+            if (Math.abs(obstacle.x - snake[0].x) < gridSize * 5 && Math.abs(obstacle.y - snake[0].y) < gridSize * 5) {
+                i--; // Próbáljuk újra
+            } else {
+                obstacles.push(obstacle);
+            }
+        }
+    }
+    
+    // ÚJ: Akadályok rajzolása
+    function drawObstacles() {
+        obstacles.forEach(obstacle => {
+            ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, gridSize, gridSize);
+        });
+    }
 
     function drawSnake() {
         snake.forEach((part, index) => {
-            if (index === 0) { // A kígyó feje
+            if (index === 0) { // Fej
                 ctx.drawImage(selectedCharacter.img, part.x, part.y, gridSize, gridSize);
-            } else { // A kígyó teste
+            } else { // Test
                 ctx.fillStyle = '#5cb85c';
                 ctx.strokeStyle = '#4cae4c';
                 ctx.fillRect(part.x, part.y, gridSize, gridSize);
@@ -122,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const head = {x: snake[0].x + dx, y: snake[0].y + dy};
         snake.unshift(head);
         
-        // Ütközés a fallal
+        // Ütközés fallal
         if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
             isGameOver = true;
             return;
@@ -130,10 +160,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Ütközés önmagával
         for (let i = 1; i < snake.length; i++) {
-            if (head.x === snake[i].x && head.y === snake[i].y) {
-                isGameOver = true;
-                return;
-            }
+            if (head.x === snake[i].x && head.y === snake[i].y) { isGameOver = true; return; }
+        }
+        
+        // ÚJ: Ütközés akadállyal
+        for (let i = 0; i < obstacles.length; i++) {
+            if (head.x === obstacles[i].x && head.y === obstacles[i].y) { isGameOver = true; return; }
         }
         
         const ateFood = snake[0].x === food.x && snake[0].y === food.y;
@@ -149,22 +181,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateFood() {
         food.x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
         food.y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
-        // Ellenőrizzük, hogy az étel nem a kígyón van-e
-        snake.forEach(part => {
-            if (part.x === food.x && part.y === food.y) {
-                generateFood();
+        
+        let onObject = true;
+        while(onObject) {
+            onObject = false;
+            // Ne legyen a kígyón
+            snake.forEach(part => { if (part.x === food.x && part.y === food.y) onObject = true; });
+            // Ne legyen akadályon
+            obstacles.forEach(obstacle => { if (obstacle.x === food.x && obstacle.y === food.y) onObject = true; });
+            
+            if (onObject) { // Ha rossz helyre került, generáljunk újat
+                 food.x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
+                 food.y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
             }
-        });
+        }
     }
 
     function drawFood() {
-        ctx.fillStyle = '#d9534f';
-        ctx.strokeStyle = '#c9302c';
-        ctx.fillRect(food.x, food.y, gridSize, gridSize);
-        ctx.strokeRect(food.x, food.y, gridSize, gridSize);
+        // VÁLTOZÁS: Kép rajzolása
+        ctx.drawImage(giftImage, food.x, food.y, gridSize, gridSize);
     }
     
     function changeDirection(event) {
+        // Megakadályozza az oldal görgetését a nyilakkal
+        event.preventDefault();
+
         if (changingDirection) return;
         changingDirection = true;
         
@@ -174,21 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const goingRight = dx === gridSize;
         const goingLeft = dx === -gridSize;
         
-        if ((keyPressed === "ArrowLeft" || keyPressed === "a") && !goingRight) {
-            dx = -gridSize;
-            dy = 0;
-        }
-        if ((keyPressed === "ArrowUp" || keyPressed === "w") && !goingDown) {
-            dx = 0;
-            dy = -gridSize;
-        }
-        if ((keyPressed === "ArrowRight" || keyPressed === "d") && !goingLeft) {
-            dx = gridSize;
-            dy = 0;
-        }
-        if ((keyPressed === "ArrowDown" || keyPressed === "s") && !goingDown) {
-            dx = 0;
-            dy = gridSize;
-        }
+        if ((keyPressed === "ArrowLeft" || keyPressed.toLowerCase() === "a") && !goingRight) { dx = -gridSize; dy = 0; }
+        if ((keyPressed === "ArrowUp" || keyPressed.toLowerCase() === "w") && !goingDown) { dx = 0; dy = -gridSize; }
+        if ((keyPressed === "ArrowRight" || keyPressed.toLowerCase() === "d") && !goingLeft) { dx = gridSize; dy = 0; }
+        // JAVÍTÁS: Itt hiba volt, most már lehet lefele menni, ha előtte felfele mentél
+        if ((keyPressed === "ArrowDown" || keyPressed.toLowerCase() === "s") && !goingUp) { dx = 0; dy = gridSize; }
     }
 });
